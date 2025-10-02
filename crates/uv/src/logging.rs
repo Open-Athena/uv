@@ -41,8 +41,8 @@ pub(crate) fn setup_logging(
     // We use directives here to ensure `RUST_LOG` can override them
     let default_directive = match level {
         Level::Off => {
-            // Show nothing
-            tracing::level_filters::LevelFilter::OFF.into()
+            // Only show warnings and errors
+            Directive::from_str("warn").unwrap()
         }
         Level::DebugUv => {
             // Show `DEBUG` messages from the CLI crate (and ERROR/WARN/INFO)
