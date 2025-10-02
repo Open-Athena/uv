@@ -1,0 +1,54 @@
+name: Test quiet logging
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-quiet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: "Install Rust toolchain"
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: "Build uv from source"
+        run: cargo build --release
+
+      - name: Create test project
+        run: |
+          mkdir -p test-project
+          cd test-project
+          cat > pyproject.toml <<'EOF'
+          [project]
+          name = "test-quiet"
+          version = "0.1.0"
+          dependencies = [
+              "requests>=2.31.0",
+              "numpy>=1.24.0",
+              "pandas>=2.0.0",
+              "flask>=2.3.0",
+              "django>=4.2.0",
+              "pytest>=7.4.0",
+              "black>=23.7.0",
+              "mypy>=1.5.0",
+          ]
+          EOF
+
+      - name: Test uv sync --quiet (should NOT show INFO logs)
+        run: |
+          cd test-project
+          echo "=== Running uv sync --quiet ==="
+          ../target/release/uv sync --quiet 2>&1 | tee sync-output.txt
+          echo ""
+          echo "=== Checking for INFO logs ==="
+          if grep "INFO" sync-output.txt; then
+            echo "❌ Found INFO logs with --quiet flag"
+            exit 1
+          else
+            echo "✅ No INFO logs found with --quiet flag"
+          fi
